@@ -230,6 +230,33 @@ typedef struct
     SE_Dimensions dimensions_;  // Width, length and height of the bounding box.
 } SE_OSCBoundingBox;
 
+typedef struct
+{
+    int   id;  // id of object to perform action
+    float speed;
+    int   transition_shape;  // 0 = cubic, 1 = linear, 2 = sinusoidal, 3 = step
+    int   transition_dim;    // 0 = distance, 1 = rate, 2 = time
+    float transition_value;
+} SE_SpeedActionStruct;
+
+typedef struct
+{
+    int   id;                // id of object to perform action
+    int   mode;              // 0 = absolute, 1 = relative (own vehicle)
+    int   target;            // target lane id (absolute or relative)
+    int   transition_shape;  // 0 = cubic, 1 = linear, 2 = sinusoidal, 3 = step
+    int   transition_dim;    // 0 = distance, 1 = rate, 2 = time
+    float transition_value;
+} SE_LaneChangeActionStruct;
+
+typedef struct
+{
+    int   id;  // id of object to perform action
+    float offset;
+    float maxLateralAcc;     // 0 = distance, 1 = rate, 2 = time
+    int   transition_shape;  // 0 = cubic, 1 = linear, 2 = sinusoidal, 3 = step
+} SE_LaneOffsetActionStruct;
+
 // Modes for interpret Z, Head, Pitch, Roll coordinate value as absolute or relative
 // grouped as bitmask: 0000 => skip/use current, 0001=DEFAULT, 0011=ABS, 0111=REL
 // example: Relative Z, Absolute H, Default R, Current P = SE_Z_REL | SE_H_ABS | SE_R_DEF = 4151 = 0001 0000 0011 0111
@@ -1110,22 +1137,7 @@ extern "C"
     /**
     Registers a function to be called back from esmini every time a StoryBoardElement changes its state.
     The name of the respective StoryBoardElement, the type, state, and full path (parent names delimited by /) will be returned.
-
-     Values for the StoryBoardElement type
-        STORY = 1,
-        ACT = 2,
-        MANEUVER_GROUP = 3,
-        MANEUVER = 4,
-        EVENT = 5,
-        ACTION = 6,
-        UNDEFINED_ELEMENT_TYPE = 0
-
-     Values for the StoryBoardElement state
-        STANDBY = 1,
-        RUNNING = 2,
-        COMPLETE = 3,
-        UNDEFINED_ELEMENT_STATE = 0
-
+    See StoryBoardElement.hpp -> StoryBoardElement class ElementType and State enums for type and state values.
     Registered callbacks will be cleared between SE_Init calls.
     @param fnPtr A pointer to the function to be invoked
     */
@@ -1536,6 +1548,31 @@ extern "C"
             @return 0 if successful, -1 if not (e.g. wrong type)
     */
     SE_DLL_API int SE_GetRoutePoint(int object_id, int route_index, SE_RouteInfo *routeinfo);
+
+    /**
+            Inject a speed action
+            @param action Struct including needed info for the action, see SE_SpeedActionStruct definition
+    */
+    SE_DLL_API void SE_InjectSpeedAction(SE_SpeedActionStruct *action);
+
+    /**
+            Inject a lane change action
+            @param action Struct including needed info for the action, see SE_LaneChangeActionStruct definition
+    */
+    SE_DLL_API void SE_InjectLaneChangeAction(SE_LaneChangeActionStruct *action);
+
+    /**
+            Inject a lane offset action
+            @param action Struct including needed info for the action, see SE_LaneOffsetActionStruct definition
+    */
+    SE_DLL_API void SE_InjectLaneOffsetAction(SE_LaneOffsetActionStruct *action);
+
+    /**
+            Check whether any injected action is ongoing
+            @param action_type Type of action, see SE_ActionType enum. Set to -1 to check for any action.
+    */
+    SE_DLL_API bool SE_InjectedActionOngoing(int action_type);
+
 #ifdef __cplusplus
 }
 #endif

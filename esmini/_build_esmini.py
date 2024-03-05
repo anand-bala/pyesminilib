@@ -1,10 +1,21 @@
+import logging
 from pathlib import Path
+from typing import List
 
 import urllib3
 from cffi import FFI
 
 _CURRENT_FILE = Path(__file__).absolute()
-_PARENT_DIR = _CURRENT_FILE.parent
+_CURRENT_DIR = _CURRENT_FILE.parent
+
+_INSTALLED_ESMINI_FILES_TXT = _CURRENT_DIR / "_installed_esmini_files.txt"
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="[{levelname:8s}] [{name}]: {message}",
+        style="{",
+        level=logging.INFO,
+    )
 
 
 def _get_esmini_platform() -> str:
@@ -20,31 +31,59 @@ def _get_esmini_platform() -> str:
     raise RuntimeError(f"Unsupported plaform for esmini: {platform.platform()}")
 
 
+def _are_esmini_files_present() -> bool:
+    """Checks if esmini files that are present in the esmini demo are present."""
+    # First check if we have our tracker
+    log = logging.getLogger(__name__)
+    log.info("checking if required esmini files are present")
+
+    if not _INSTALLED_ESMINI_FILES_TXT.is_file():
+        log.info(f"NOT PRESENT -> {_INSTALLED_ESMINI_FILES_TXT}")
+        return False
+
+    # Now, check if all the files tracked in the tracker are present
+    with open(_INSTALLED_ESMINI_FILES_TXT, "r") as tracker:
+        for line in tracker:
+            to_check = _CURRENT_DIR / line.rstrip()
+            if not to_check.is_file():
+                log.info(f"NOT PRESENT -> {to_check}")
+                return False
+
+    return True
+
+
 def _download_esmini_lib() -> None:
     import re
     import shutil
     import tempfile
     import zipfile
 
-    http = urllib3.PoolManager()
-    dynamic_lib_re = re.compile(r"^esmini/bin/\S*?\.(?:so|dylib|dll)$")
+    if _are_esmini_files_present():
+        return
 
-    esmini_latest_url = f"https://github.com/esmini/esmini/releases/latest/download/esmini-bin_{_get_esmini_platform()}.zip"
-    print(f"downloading esmini release from {esmini_latest_url}")
+    log = logging.getLogger(__name__)
+    dynamic_lib_re = re.compile(r"^esmini-demo/bin/\S*?\.(?:so|dylib|dll)$")
+    headers_re = re.compile(r"^esmini-demo/EnvironmentSimulator/Libraries/esminiLib/esminiLib\.hpp$")
+    resources_re = re.compile(r"^esmini-demo/resources.*")
+
+    http = urllib3.PoolManager()
+    esmini_latest_url = f"https://github.com/esmini/esmini/releases/latest/download/esmini-demo_{_get_esmini_platform()}.zip"
+    log.info(f"downloading esmini release from {esmini_latest_url}")
 
     # Create a temporary directory for the files
     with tempfile.TemporaryDirectory() as temp_dir_name:
-        print(f"downloading artifacts to {temp_dir_name}")
+        log.info(f"downloading artifacts to {temp_dir_name}")
         # temp_dir_name = _PARENT_DIR / "../temp"
         temp_dir = Path(temp_dir_name).absolute()
         temp_dir.mkdir(exist_ok=True, parents=True)
         assert temp_dir.is_dir()
 
-        dl_zip_file = temp_dir / "esmini-bin.zip"
+        dl_zip_file = temp_dir / "esmini-demo.zip"
         with http.request("GET", esmini_latest_url, preload_content=False) as req, open(dl_zip_file, "wb") as out_file:
             shutil.copyfileobj(req, out_file)
 
-        print(f"downloaded file to {dl_zip_file}")
+        log.info(f"downloaded file to {dl_zip_file}")
+        names: List[str] = []
 
         # Now we need to extract just the shared libraries
         with zipfile.ZipFile(dl_zip_file, "r") as archive:
@@ -52,12 +91,25 @@ def _download_esmini_lib() -> None:
                 if member.is_dir():
                     continue
                 name = member.filename
-                if dynamic_lib_re.fullmatch(name):
+                if (dynamic_lib_re.fullmatch(name)) is not None or (headers_re.fullmatch(name) is not None):
                     member.filename = Path(name).name
-                    print(f"extracting {member.filename}")
-                    archive.extract(member, path=_PARENT_DIR)
+                    log.info(f"extracting {member.filename}")
+                    names.append(member.filename)
+                    archive.extract(member, path=_CURRENT_DIR)
+                elif resources_re.fullmatch(name) is not None:
+                    # Extract the members of the resources directory, but remove the "esmini-demo" part.
+                    fullname = Path(name)
+                    parts = fullname.parts
+                    new_name = Path("/".join(parts[1:]))
+                    member.filename = str(new_name)
+                    log.info(f"extracting {member.filename}")
+                    names.append(member.filename)
+                    archive.extract(member, path=_CURRENT_DIR)
 
-    print(f"extracted esmini libraries to {str(_PARENT_DIR)}")
+        with open(_INSTALLED_ESMINI_FILES_TXT, "w") as tracker:
+            tracker.write("\n".join(names))
+
+    log.info(f"extracted esmini libraries to {str(_CURRENT_DIR)}")
 
 
 _download_esmini_lib()
@@ -93,7 +145,7 @@ typedef struct
     float width;
     float length;
     float height;
-    ...
+    ...;
 } SE_ScenarioObjectState;
 
 typedef struct
@@ -111,8 +163,22 @@ typedef struct
     float trail_heading;
     float curvature;
     float speed_limit;
-    ...
+    ...;
 } SE_RoadInfo;
+
+typedef struct
+{
+    float x;           // Route point in the global coordinate system
+    float y;           // Route point in the global coordinate system
+    float z;           // Route point in the global coordinate system
+    int   roadId;      // Route point, road ID
+    int   junctionId;  // Route point, junction ID (-1 if not in a junction)
+    int   laneId;      // Route point, lane ID
+    int   osiLaneId;   // Route point, osi lane ID
+    float laneOffset;  // Route point, lane offset (lateral distance from lane center)
+    float s;           // Route point, s (longitudinal distance along reference line)
+    float t;           // Route point, t (lateral distance from reference line)
+} SE_RouteInfo;
 
 typedef struct
 {
@@ -202,6 +268,12 @@ typedef struct
     const char *name;   // Name of the parameter as defined in the OpenSCENARIO file
     void       *value;  // Pointer to value which can be an integer, double, bool or string (const char*) as defined in the OpenSCENARIO file
 } SE_Parameter;
+
+typedef struct
+{
+    const char *name;   // Name of the variable as defined in the OpenSCENARIO file
+    void       *value;  // Pointer to value which can be an integer, double, bool or string (const char*) as defined in the OpenSCENARIO file
+} SE_Variable;
 
 int SE_Init(const char *oscFilename, int disable_ctrls, int use_viewer, int threads, int record);
 int SE_InitWithString(const char *oscAsXMLString, int disable_ctrls, int use_viewer, int threads, int record);
@@ -347,8 +419,8 @@ int SE_SaveImagesToRAM(bool state);
 int SE_SaveImagesToFile(int nrOfFrames);
 int SE_FetchImage(SE_Image *image);
 void SE_RegisterImageCallback(void (*fnPtr)(SE_Image *, void *), void *user_data);
-SE_WritePPMImage(const char *filename, int width, int height, const unsigned char *data, int pixelSize, int pixelFormat, bool upsidedown);
-SE_WriteTGAImage(const char *filename, int width, int height, const unsigned char *data, int pixelSize, int pixelFormat, bool upsidedown);
+int SE_WritePPMImage(const char *filename, int width, int height, const unsigned char *data, int pixelSize, int pixelFormat, bool upsidedown);
+int SE_WriteTGAImage(const char *filename, int width, int height, const unsigned char *data, int pixelSize, int pixelFormat, bool upsidedown);
 int SE_AddCustomCamera(double x, double y, double z, double h, double p);
 int SE_AddCustomFixedCamera(double x, double y, double z, double h, double p);
 int SE_AddCustomAimingCamera(double x, double y, double z);
@@ -372,8 +444,8 @@ ffibuilder.set_source(
     #include "esminiLib.hpp"
 """,
     libraries=["esminiLib"],
-    include_dirs=[str(_PARENT_DIR)],
-    library_dirs=[str(_PARENT_DIR)],
+    include_dirs=[str(_CURRENT_DIR)],
+    library_dirs=[str(_CURRENT_DIR)],
     source_extension=".cpp",
     extra_compile_args=[
         "-std=c++17",
@@ -382,7 +454,7 @@ ffibuilder.set_source(
         "-Wl,-strip-all",
     ],
     runtime_library_dirs=[
-        str(_PARENT_DIR),
+        str(_CURRENT_DIR),
     ],
 )
 
