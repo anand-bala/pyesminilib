@@ -263,6 +263,32 @@ typedef struct
     SE_Dimensions dimensions_;  // Width, length and height of the bounding box.
 } SE_OSCBoundingBox;
 
+typedef enum
+{
+    SE_Z_SET     = 1,  // 0001
+    SE_Z_DEFAULT = 1,  // 0001
+    SE_Z_ABS     = 3,  // 0011
+    SE_Z_REL     = 7,  // 0111
+    SE_H_SET     = SE_Z_SET << 4,
+    SE_H_ABS     = SE_Z_ABS << 4,
+    SE_H_REL     = SE_Z_REL << 4,
+    SE_H_DEFAULT = SE_Z_DEFAULT << 4,
+    SE_P_SET     = SE_Z_SET << 8,
+    SE_P_ABS     = SE_Z_ABS << 8,
+    SE_P_REL     = SE_Z_REL << 8,
+    SE_P_DEFAULT = SE_Z_DEFAULT << 8,
+    SE_R_SET     = SE_Z_SET << 12,
+    SE_R_DEFAULT = SE_Z_DEFAULT << 12,
+    SE_R_ABS     = SE_Z_ABS << 12,
+    SE_R_REL     = SE_Z_REL << 12,
+} SE_PositionMode;
+
+typedef enum
+{
+    SE_SET    = 1,  // Used by explicit set functions
+    SE_UPDATE = 2   // Used by controllers updating the position
+} SE_PositionModeType;
+
 typedef struct
 {
     const char *name;   // Name of the parameter as defined in the OpenSCENARIO file
@@ -338,6 +364,9 @@ int SE_SetVariableBool(const char *variableName, bool value);
 int SE_SetVariableString(const char *variableName, const char *value);
 
 void *SE_GetODRManager();
+    
+void SE_SetObjectPositionMode(int object_id, SE_PositionModeType type, int mode);
+void SE_SetObjectPositionModeDefault(int object_id, SE_PositionModeType type);
 
 int SE_AddObject(const char *object_name, int object_type, int object_category, int object_role, int model_id);
 int SE_AddObjectWithBoundingBox(const char       *object_name,

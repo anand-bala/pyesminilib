@@ -20,6 +20,10 @@ packages = ["esmini"]
 # ignore_missing_imports = true
 show_error_codes = true
 
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["esmini._esmini_cffi", "esmini._esmini_cffi.*"]
+
 [tool.ruff]
 line-length = 127
 
