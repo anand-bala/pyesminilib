@@ -1,0 +1,33 @@
+[project]
+name = "pyesminilib"
+version = "0.1.0"
+description = "A minimal wrapper around esminiLib"
+authors = ["Anand Balakrishnan <anandbala1597@gmail.com>"]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-64"]
+license = "MIT"
+license-file = "LICENSE"
+
+[tasks]
+
+[dependencies]
+python = "~=3.11"
+cffi = ">=1.16"
+ipython = ">=8.22.1,<8.23"
+ninja = ">=1.11.1,<1.12"
+cxx-compiler = ">=1.7.0,<1.8"
+urllib3 = ">=2.2.1,<2.3"
+
+[build-dependencies]
+setuptools-scm = ">=8"
+setuptools = ">=64"
+pip = ">=21.0"
+compilers = ">=1.7.0,<1.8"
+isort = ">=5.13.2,<5.14"
+mypy = ">=1.8.0,<1.9"
+black = ">=24.2.0,<24.3"
+types-setuptools = ">=69.0.0.0,<69.0.1"
+types-urllib3 = ">=1.26.25.14,<1.26.26"
+
+[pypi-dependencies]
+types-cffi = "*"
