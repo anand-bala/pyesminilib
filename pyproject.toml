@@ -11,11 +11,20 @@ dependencies = ["cffi>=1.0", "urllib3~=2.2"]
 where = ["src"]
 include = ["esmini*"]
 
+[tool.setuptools.package-data]
+esmini = ["*resources/*", "*resources/**/*", "*.txt"]
+
 [tool.setuptools_scm]
 version_file = "src/esmini/_version.py"
 
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8", "cffi>=1.0", "urllib3~=2.2"]
+requires = [
+  "setuptools>=64",
+  "setuptools_scm>=8",
+  "cffi>=1.0",
+  "urllib3~=2.2",
+  "wheel",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.mypy]
@@ -23,9 +32,9 @@ packages = ["esmini"]
 # ignore_missing_imports = true
 show_error_codes = true
 
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["esmini._esmini_cffi", "esmini._esmini_cffi.*"]
+# [[tool.mypy.overrides]]
+# ignore_missing_imports = true
+# module = ["esmini._esmini_cffi", "esmini._esmini_cffi.*"]
 
 [tool.ruff]
 line-length = 127
