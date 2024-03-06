@@ -10,8 +10,6 @@ from pathlib import Path
 import esmini
 
 RESOURCES_DIR = esmini.get_default_resources_dir()
-
-
 DT = 0.1
 
 

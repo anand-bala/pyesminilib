@@ -5,7 +5,7 @@ logs/
 # cffi generated sources
 src/esmini/*.cpp
 # Downloaded stuff
-src/esmini/resources/
+*.osgb
 src/esmini/_installed_esmini_files.txt
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
