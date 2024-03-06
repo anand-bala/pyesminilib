@@ -14,10 +14,9 @@ license-file = "LICENSE"
 python = "~=3.11"
 cffi = ">=1.16"
 ipython = ">=8.22.1,<8.23"
-ninja = ">=1.11.1,<1.12"
+compilers = ">=1.7.0,<1.8"
 cxx-compiler = ">=1.7.0,<1.8"
 urllib3 = ">=2.2.1,<2.3"
-compilers = ">=1.7.0,<1.8"
 
 [build-dependencies]
 setuptools-scm = ">=8"
@@ -29,6 +28,7 @@ black = ">=24.2.0,<24.3"
 types-setuptools = ">=69.0.0.0,<69.0.1"
 types-urllib3 = ">=1.26.25.14,<1.26.26"
 ruff = ">=0.3.0,<0.4"
+pdoc = ">=14.4.0,<14.5"
 
 [pypi-dependencies]
 types-cffi = "*"

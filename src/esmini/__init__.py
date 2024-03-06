@@ -589,20 +589,20 @@ def init_scenario_engine(
 def init_scenario_engine(**kwargs) -> None:
     """Initialize the scenario engine
 
-        Parameters
-        ----------
+    Parameters
+    ----------
     osc_filename
-            Path to the OpenSCENARIO file
-        xml_specification
-            OpenSCENARIO XML as string
-        disable_ctrls
-            If `False`, controllers will be applied according to OSC file. Otherwise, all controller will be disabled.
-        use_viewer
-            Flag to control the viewer. See `ViewerFlag`
-        viewer_thread
-            If `True`, will run the viewer in a separate thread.
-        record
-            If `True`, will create a recording for later playback.
+        Path to the OpenSCENARIO file
+    xml_specification
+        OpenSCENARIO XML as string
+    disable_ctrls
+        If `False`, controllers will be applied according to OSC file. Otherwise, all controller will be disabled.
+    use_viewer
+        Flag to control the viewer. See `ViewerFlag`
+    viewer_thread
+        If `True`, will run the viewer in a separate thread.
+    record
+        If `True`, will create a recording for later playback.
 
     """
     xml_specification: Union[str, bytes, None] = kwargs.get("xml_specification")
