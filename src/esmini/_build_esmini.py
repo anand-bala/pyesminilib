@@ -64,7 +64,7 @@ def _download_esmini_lib() -> None:
     log = logging.getLogger(__name__)
     dynamic_lib_re = re.compile(r"^esmini-demo/bin/\S*?\.(?:so|dylib|dll)$")
     headers_re = re.compile(r"^esmini-demo/EnvironmentSimulator/Libraries/esminiLib/esminiLib\.hpp$")
-    resources_re = re.compile(r"^esmini-demo/resources.*")
+    resources_re = re.compile(r"^esmini-demo/resources.*?\.osgb")
 
     http = urllib3.PoolManager()
     esmini_latest_url = f"https://github.com/esmini/esmini/releases/latest/download/esmini-demo_{_get_esmini_platform()}.zip"
