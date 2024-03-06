@@ -17,17 +17,18 @@ ipython = ">=8.22.1,<8.23"
 ninja = ">=1.11.1,<1.12"
 cxx-compiler = ">=1.7.0,<1.8"
 urllib3 = ">=2.2.1,<2.3"
+compilers = ">=1.7.0,<1.8"
 
 [build-dependencies]
 setuptools-scm = ">=8"
 setuptools = ">=64"
 pip = ">=21.0"
-compilers = ">=1.7.0,<1.8"
 isort = ">=5.13.2,<5.14"
 mypy = ">=1.8.0,<1.9"
 black = ">=24.2.0,<24.3"
 types-setuptools = ">=69.0.0.0,<69.0.1"
 types-urllib3 = ">=1.26.25.14,<1.26.26"
+ruff = ">=0.3.0,<0.4"
 
 [pypi-dependencies]
 types-cffi = "*"
