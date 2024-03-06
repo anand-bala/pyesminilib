@@ -313,8 +313,11 @@ unsigned int SE_GetSeed();
 void SE_SetSeed(unsigned int seed);
 void SE_SetWindowPosAndSize(int x, int y, int w, int h);
 
-// TODO: Register trampolines for function pointer and void pointer
-void SE_RegisterParameterDeclarationCallback(void (*fnPtr)(void *), void *user_data);
+typedef void (*SE_ParameterDeclarationCallback)(void *user_data);
+
+extern "Python" void esmini_parameter_declaration_callback(void *);
+
+void SE_RegisterParameterDeclarationCallback(SE_ParameterDeclarationCallback fnPtr, void *user_data);
 
 int SE_SetOSITolerances(double maxLongitudinalDistance, double maxLateralDeviation);
 int SE_SetParameterDistribution(const char *filename);
@@ -418,9 +421,16 @@ int SE_GetNumberOfObjectSensors();
 int SE_ViewSensorData(int object_id);
 int SE_FetchSensorObjectList(int sensor_id, int *list);
 
+typedef void (*SE_ObjectCallback)(SE_ScenarioObjectState *state, void *user_data);
+
+extern "Python" void esmini_object_callback(SE_ScenarioObjectState *, void *);
+
+void SE_RegisterObjectCallback(int object_id, SE_ObjectCallback fnPtr, void *user_data);
+
+
 // TODO: Register trampolines for function pointer and void pointer
-void SE_RegisterObjectCallback(int object_id, void (*fnPtr)(SE_ScenarioObjectState *, void *), void *user_data);
 void SE_RegisterConditionCallback(void (*fnPtr)(const char *name, double timestamp));
+
 void SE_LogMessage(const char *message);
 void SE_ViewerShowFeature(int featureType, bool enable);
 
