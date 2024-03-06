@@ -1,5 +1,5 @@
 from setuptools import setup
 
 setup(
-    cffi_modules=["esmini/_build_esmini.py:ffibuilder"],
+    cffi_modules=["src/esmini/_build_esmini.py:ffibuilder"],
 )

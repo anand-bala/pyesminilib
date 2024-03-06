@@ -5,11 +5,14 @@ dynamic = ["version"]
 dependencies = ["cffi>=1.0", "urllib3~=2.2"]
 
 
-[tool.setuptools]
-packages = ["esmini"]
+# [tool.setuptools]
+# packages = ["esmini"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["esmini*"]
 
 [tool.setuptools_scm]
-version_file = "esmini/_version.py"
+version_file = "src/esmini/_version.py"
 
 [build-system]
 requires = ["setuptools>=64", "setuptools_scm>=8", "cffi>=1.0", "urllib3~=2.2"]

@@ -2,10 +2,10 @@
 .pixi/
 
 # cffi generated sources
-esmini/*.cpp
+src/esmini/*.cpp
 # Downloaded stuff
-esmini/resources/
-esmini/_installed_esmini_files.txt
+src/esmini/resources/
+src/esmini/_installed_esmini_files.txt
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
