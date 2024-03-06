@@ -18,6 +18,15 @@ if importlib.util.find_spec("esmini._esmini_cffi") is None:
 import esmini._esmini_cffi as _esmini_cffi
 
 
+def get_default_resources_dir() -> Path:
+    """Get the path to the default resources bundled with esmini"""
+    current_file = Path(__file__).absolute()
+    current_dir = current_file.parent
+    resources_dir = current_dir / "resources"
+    assert resources_dir.is_dir()
+    return resources_dir
+
+
 class PositionMode(IntFlag):
     SE_Z_SET = 1  # 0001
     SE_Z_DEFAULT = 1  # 0001
@@ -549,7 +558,7 @@ class ViewerFlag(IntFlag):
 @overload
 def init_scenario_engine(
     *,
-    osc_filename: os.PathLike,
+    osc_filename: Union[str, bytes, os.PathLike],
     disable_ctrls: bool = False,
     use_viewer: ViewerFlag = ViewerFlag.WINDOWED,
     viewer_thread: bool = False,
@@ -588,7 +597,7 @@ def init_scenario_engine(**kwargs) -> None:
 
     """
     xml_specification: Union[str, bytes, None] = kwargs.get("xml_specification")
-    osc_filename: Optional[os.PathLike] = kwargs.get("osc_filename")
+    osc_filename: Optional[Union[str, bytes, os.PathLike]] = kwargs.get("osc_filename")
 
     disable_ctrls: bool = kwargs.get("disable_ctrls", False)
     use_viewer: ViewerFlag = kwargs.get("use_viewer", ViewerFlag.WINDOWED)
@@ -632,7 +641,7 @@ def init_scenario_engine(**kwargs) -> None:
         raise RuntimeError("Unable to initialize esmini scenario engine")
 
 
-def add_search_path(path: os.PathLike) -> None:
+def add_search_path(path: Union[str, bytes, os.PathLike]) -> None:
     """Add a search path for OpenDRIVE and 3D model files.
     Needs to be called before `init_scenario_engine`.
     """
@@ -654,7 +663,7 @@ def clear_search_paths() -> None:
     _esmini_cffi.lib.SE_ClearPaths()
 
 
-def set_logfile_path(path: os.PathLike) -> None:
+def set_logfile_path(path: Union[str, bytes, os.PathLike]) -> None:
     """
     Specify scenario logfile (.txt) file path, optionally including directory path and/or filename.
     Specify only directory (end with "/" or "\") to let esmini set default filename.
@@ -670,7 +679,7 @@ def set_logfile_path(path: os.PathLike) -> None:
     _esmini_cffi.lib.SE_SetLogFilePath(logfilepath_str)
 
 
-def set_datfile_path(path: os.PathLike) -> None:
+def set_datfile_path(path: Union[str, bytes, os.PathLike]) -> None:
     """
     Specify scenario recording (.dat) file path, optionally including directory path and/or filename.
     Specify only directory (end with "/" or "\") to let esmini set default filename.
@@ -746,7 +755,7 @@ def set_osi_tolerances(max_longitudinal_dist: float = 50, max_lateral_deviation:
         raise RuntimeError("unable to set OSI tolerances")
 
 
-def set_parameter_distribution(path: os.PathLike) -> None:
+def set_parameter_distribution(path: Union[str, bytes, os.PathLike]) -> None:
     """Specify OpenSCENARIO parameter distribution file.
     Must be called before `init_scenario_engine`.
     """
