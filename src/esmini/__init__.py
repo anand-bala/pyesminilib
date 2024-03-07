@@ -64,6 +64,18 @@ class ScenarioObjectState(object):
         else:
             self._ptr = ptr
 
+    def __repr__(self) -> str:
+        props = dict(
+            id=self.id,
+            ctrl_type=self.ctrl_type,
+            x=self.x,
+            y=self.y,
+            heading=self.h,
+            speed=self.speed,
+        )
+        data = ", ".join(["=".join([key, str(val)]) for key, val in props.items()])
+        return f"ScenarioObjectState({data})"
+
     @property
     def id(self) -> int:
         return self._ptr.id  # type: ignore
@@ -619,7 +631,10 @@ def init_scenario_engine(**kwargs) -> None:
 
     ok: int
     if xml_specification is not None:
-        assert isinstance(xml_specification, (str, bytes))
+        if not isinstance(xml_specification, bytes):
+            xml_specification = str(xml_specification).encode()
+        else:
+            xml_specification = bytes(xml_specification)
         # Run InitWithString
         ok = _esmini_cffi.lib.SE_InitWithString(
             xml_specification,
@@ -739,8 +754,45 @@ def set_window(x: int, y: int, width: int, height: int) -> None:
     _esmini_cffi.lib.SE_SetWindowPosAndSize(x, y, width, height)
 
 
+ParameterDeclartionCallback: TypeAlias = Callable[[], None]
+
+
+class ParameterDeclartionCallbackHandle(object):
+    """Handle to a callback registered for `register_parameter_declaration_callback`"""
+
+    def __init__(self, fn: ParameterDeclartionCallback) -> None:
+        self._handle = _esmini_cffi.ffi.new_handle(self)
+        self.callback = fn
+        _esmini_cffi.lib.SE_RegisterParameterDeclarationCallback(
+            _esmini_cffi.lib.esmini_parameter_declaration_callback,  # fnPtr
+            self._handle,
+        )
+
+
+@_esmini_cffi.ffi.def_extern()  # pyright: ignore[reportOptionalCall]
+def esmini_parameter_declaration_callback(handle: "_cffi_backend.FFI.CData") -> None:
+    """@private Trampoline for parameter declaration callbacks."""
+    concrete_handle: ParameterDeclartionCallbackHandle = _esmini_cffi.ffi.from_handle(handle)
+    concrete_handle.callback()
+
+
 # TODO: need to register a trampoline
-def register_parameter_declaration_callback() -> None:
+def register_parameter_declaration_callback() -> ParameterDeclartionCallbackHandle:
+    """
+    Register a function and optional argument (ref) to be called back from esmini after ParameterDeclarations has been parsed,
+    but before the scenario is initialized, i.e. before applying the actions in the Init block. One use-case is to
+    set parameter values for initial entity states, e.g. s value in lane position. So this callback will happen just
+    after parameters has been parsed, but before they are applied, providing an opportunity to control the initial
+    states via API.
+
+    .. note::
+
+       Registered init callbacks are be cleared between `init_scenario_engine` calls, i.e. needs to be registered
+
+    .. warning:: Be Careful!
+
+       Be sure to keep the returned handle safe, as it owns the allocation for the callback.
+    """
     raise NotImplementedError
 
 
@@ -768,7 +820,7 @@ def set_parameter_distribution(path: Union[str, bytes, Path]) -> None:
     else:
         param_file = bytes(path)
 
-    if _esmini_cffi.ffi.SE_SetParameterDistribution(param_file) != 0:
+    if _esmini_cffi.lib.SE_SetParameterDistribution(param_file) != 0:
         raise RuntimeError("unable to set parameter distribution file")
 
 
@@ -930,14 +982,22 @@ def get_num_properties(index: int) -> int:
 
 def set_parameter(name: Union[str, bytes], value: Union[bool, int, float, str, bytes]) -> bool:  # noqa: PYI041
     """Set the parameter with the given `name`. Returns `False` if not successful."""
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if isinstance(value, bool):
-        ok = _esmini_cffi.ffi.SE_SetParameterBool(name, value)
+        ok = _esmini_cffi.lib.SE_SetParameterBool(name, value)
     elif isinstance(value, int):
-        ok = _esmini_cffi.ffi.SE_SetParameterInt(name, value)
+        ok = _esmini_cffi.lib.SE_SetParameterInt(name, value)
     elif isinstance(value, float):
-        ok = _esmini_cffi.ffi.SE_SetParameterDouble(name, value)
+        ok = _esmini_cffi.lib.SE_SetParameterDouble(name, value)
     elif isinstance(value, (str, bytes)):
-        ok = _esmini_cffi.ffi.SE_SetParameterString(name, value)
+        if not isinstance(value, bytes):
+            value = str(value).encode()
+        else:
+            value = bytes(value)
+        ok = _esmini_cffi.lib.SE_SetParameterString(name, value)
     else:
         raise TypeError(f"unsupported parameter type {type(value)}")
 
@@ -952,6 +1012,10 @@ def get_parameter(name: Union[str, bytes], ptype: ParameterType) -> Union[bool, 
     TypeError
         Incorrect type of parameter
     """
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if ptype == ParameterType.BOOL:
         bool_ptr = _esmini_cffi.ffi.new("bool *")
         ok = _esmini_cffi.lib.SE_GetParameterBool(name, bool_ptr)
@@ -985,14 +1049,22 @@ def get_parameter(name: Union[str, bytes], ptype: ParameterType) -> Union[bool, 
 
 def set_variable(name: Union[str, bytes], value: Union[bool, int, float, str, bytes]) -> bool:  # noqa: PYI041
     """Set the variable with the given `name`. Returns `False` if not successful."""
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if isinstance(value, bool):
-        ok = _esmini_cffi.ffi.SE_SetVariableBool(name, value)
+        ok = _esmini_cffi.lib.SE_SetVariableBool(name, value)
     elif isinstance(value, int):
-        ok = _esmini_cffi.ffi.SE_SetVariableInt(name, value)
+        ok = _esmini_cffi.lib.SE_SetVariableInt(name, value)
     elif isinstance(value, float):
-        ok = _esmini_cffi.ffi.SE_SetVariableDouble(name, value)
+        ok = _esmini_cffi.lib.SE_SetVariableDouble(name, value)
     elif isinstance(value, (str, bytes)):
-        ok = _esmini_cffi.ffi.SE_SetVariableString(name, value)
+        if not isinstance(value, bytes):
+            value = str(value).encode()
+        else:
+            value = bytes(value)
+        ok = _esmini_cffi.lib.SE_SetVariableString(name, value)
     else:
         raise TypeError(f"unsupported variable type {type(value)}")
 
@@ -1007,6 +1079,10 @@ def get_variable(name: Union[str, bytes], ptype: VariableType) -> Union[bool, in
     TypeError
         Incorrect type of variable
     """
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if ptype == VariableType.BOOL:
         bool_ptr = _esmini_cffi.ffi.new("bool *")
         ok = _esmini_cffi.lib.SE_GetVariableBool(name, bool_ptr)
@@ -1071,6 +1147,10 @@ def add_object(
     object_role: int,
     model_id: int,
 ) -> int:
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if (id := _esmini_cffi.lib.SE_AddObject(name, object_type, object_category, object_role, model_id)) >= 0:
         return id
     raise RuntimeError("Unable to add object")
@@ -1425,6 +1505,10 @@ def get_entity_id(index: int) -> int:
 
 
 def get_id_by_name(name: Union[str, bytes]) -> int:
+    if not isinstance(name, bytes):
+        name = str(name).encode()
+    else:
+        name = bytes(name)
     if (ok := _esmini_cffi.lib.SE_GetIdByName(name)) >= 0:
         return ok
     raise RuntimeError("Unable to retrieve object ID. Has scenario been initialized?")
@@ -1715,7 +1799,7 @@ class ObjectCallbackHandle(object):
         )
 
 
-@_esmini_cffi.ffi.def_extern(name="esmini_object_callback")  # pyright: ignore[reportOptionalCall]
+@_esmini_cffi.ffi.def_extern()  # pyright: ignore[reportOptionalCall]
 def esmini_object_callback(c_state: "_cffi_backend.FFI.CData", handle: "_cffi_backend.FFI.CData") -> None:
     """@private Trampoline for object callbacks."""
     concrete_handle: ObjectCallbackHandle = _esmini_cffi.ffi.from_handle(handle)
@@ -1740,6 +1824,10 @@ def register_object_callback(object_id: int, callback: ObjectCallback) -> Object
 
 def log_message(message: Union[str, bytes]) -> None:
     """Log message via esmini"""
+    if not isinstance(message, bytes):
+        message = str(message).encode()
+    else:
+        message = bytes(message)
     _esmini_cffi.lib.SE_LogMessage(message)
 
 
@@ -1785,13 +1873,14 @@ class SimpleVehicle(object):
     """
 
     def __init__(self, x: float, y: float, heading: float, length: float, initial_speed: float) -> None:
-        self._handle = _esmini_cffi.ffi.SE_SimpleVehicleCreate(x, y, heading, length, initial_speed)
+        self._handle = _esmini_cffi.lib.SE_SimpleVehicleCreate(x, y, heading, length, initial_speed)
         if self._handle == _esmini_cffi.ffi.NULL:
             raise RuntimeError("Unable to create SimpleVehicle")
 
     def __del__(self) -> None:
         # Need to free up the vehicle before cleanup
-        _esmini_cffi.lib.SE_SimpleVehicleDelete(self._handle)
+        if hasattr(self, "_handle") and self._handle != _esmini_cffi.ffi.NULL:
+            _esmini_cffi.lib.SE_SimpleVehicleDelete(self._handle)
 
     def control_discrete(self, dt: float, throttle: int, steering: int) -> None:
         """Control the speed and steering of the vehicle using discrete input.
