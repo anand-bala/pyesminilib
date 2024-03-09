@@ -10,6 +10,8 @@ _CURRENT_DIR = _CURRENT_FILE.parent
 
 _INSTALLED_ESMINI_FILES_TXT = _CURRENT_DIR / "_installed_esmini_files.txt"
 
+_ESMINI_VERSION = "v2.37.1"
+
 if __name__ == "__main__":
     logging.basicConfig(
         format="[{levelname:8s}] [{name}]: {message}",
@@ -67,7 +69,9 @@ def _download_esmini_lib() -> None:
     resources_re = re.compile(r"^esmini-demo/resources.*?\.osgb")
 
     http = urllib3.PoolManager()
-    esmini_latest_url = f"https://github.com/esmini/esmini/releases/latest/download/esmini-demo_{_get_esmini_platform()}.zip"
+    esmini_latest_url = (
+        f"https://github.com/esmini/esmini/releases/download/{_ESMINI_VERSION}/esmini-demo_{_get_esmini_platform()}.zip"
+    )
     log.info(f"downloading esmini release from {esmini_latest_url}")
 
     # Create a temporary directory for the files
